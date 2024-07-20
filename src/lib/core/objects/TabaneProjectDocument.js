@@ -57,7 +57,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
                 }, data );
                 options.actions.forEach( option => {
                     if ( typeof option === "string" ) {
-                        const subProject = new TabaneProjectDocument( presets[ option ] );
+                        const subProject = new TabaneProjectDocument( presets[ option ], presets, optionExtensions );
                         return this.actions.push( ...subProject.actions );
                     }
                     this.actions.push( new ModuleGlobals.TabaneSingularDocument( { ...Object.with( options.global, option ) }, optionExtensions ) )
