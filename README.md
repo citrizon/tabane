@@ -1,15 +1,18 @@
 ![image](https://github.com/tabaneproject/tabane/assets/157493292/16a30683-6d77-4e0d-b777-498c2186a6de)
 
-![BasedPkg](https://img.shields.io/badge/Javascript-121216?style=flat-square&labelColor=121216&logo=javascript&logoColor=c0c0c0&color=c0c0c0&label=Powered%20by) ![CommitActivity](https://img.shields.io/github/commit-activity/w/tabaneproject/tabane?style=flat-square&labelColor=121216&logo=github&logoColor=a0a0a0&color=c0c0c0) ![GitHub last commit](https://img.shields.io/github/last-commit/tabaneproject/tabane?style=flat-square&labelColor=121216&logo=github&logoColor=a0a0a0&color=c0c0c0)<br>
+![BasedPkg](https://img.shields.io/badge/Javascript-121216?style=flat-square&labelColor=121216&logo=javascript&logoColor=c0c0c0&color=c0c0c0&label=Powered%20by) ![CommitActivity](https://img.shields.io/github/commit-activity/w/citrizon/tabane?style=flat-square&labelColor=121216&logo=github&logoColor=a0a0a0&color=c0c0c0) ![GitHub last commit](https://img.shields.io/github/last-commit/citrizon/tabane?style=flat-square&labelColor=121216&logo=github&logoColor=a0a0a0&color=c0c0c0)<br>
 
 Tabane is a Javascript Project Manager that can be used for bundling files for web or compiling certain Supersets and more, like Automating procedures, generating files and basic file operations. It comes up with a superset called Tetoset (formerly known as Tabane Superset). It also comes up with an ECMAScript to CommonJS Transformer.
 
+> [!WARNING]
+> This is a custom version of the original package. Original package is the most stable while this repository is aiming to have cutting-edge improvements. For stable version, please visit: https://github.com/tabaneproject/tabane
+
 You can install Tabane to your system either using NPM registry or manually. To download using NPM registry, run this command:
 ```sh
-npm install -g @tabaneproject/tabane
+npm install -g tabane
 ```
 After that, make sure it works by running `tabane help` command
-For more information, please check the [wiki](https://github.com/tabaneproject/tabane/wiki) :3
+For more information, please check the [wiki](https://github.com/citrizon/tabane/wiki) :3
 
 ### Installation from source (aka. Manual Installation)
 You can install Tabane manually using this GitHub repo. Firstly, clone this repo to a suitable place. After that, run `install.sh` file with root permissions inside the repo directory. This script will install Tabane system-wide.
