@@ -1,6 +1,6 @@
 {
-  "name": "@tabaneproject/tabane",
-  "description": "Tabane is a Javascript Project Manager that can be used for bundling files for web or compiling certain Supersets and more.",
+  "name": "tabane",
+  "description": "Tabane is a Javascript Project Manager that can be used for bundling files for web or compiling certain Supersets and more. This is a cutting-edge version of the original package.",
   "main": "src/lib/tabane.js",
   "directories": {
     "shared": "src/shared",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tabaneproject/tabane.git"
+    "url": "git+https://github.com/citrizon/tabane.git"
   },
   "keywords": [
     "tabane",
@@ -23,28 +23,12 @@
     "project-manager",
     "javascript-project-manager"
   ],
-  "maintainers": [
-    {
-      "name": "Botaro Shinomiya",
-      "email": "citrizon@waifu.club",
-      "web": "http://github.com/citrizon"
-    },
-    {
-      "name": "OSCILLIX",
-      "email": "oscillixonline@gmail.com",
-      "web": "http://github.com/Oscillix"
-    },
-    {
-      "name": "Bluskript",
-      "email": "bluskript@gmail.com",
-      "web": "http://github.com/bluskript"
-    }
-  ],
+  "author": "citrizon",
   "license": "BSL-1.0",
   "bugs": {
-    "url": "https://github.com/tabaneproject/tabane/issues"
+    "url": "https://github.com/citrizon/tabane/issues"
   },
-  "homepage": "https://github.com/tabaneproject/tabane#readme",
+  "homepage": "https://github.com/citrizon/tabane#readme",
   "dependencies": {
     "@inquirer/prompts": "^5.0.5",
     "@tabaneproject/ecmagen": "^1.0.6",
