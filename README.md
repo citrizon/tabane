@@ -1,4 +1,4 @@
-![image](https://github.com/tabaneproject/tabane/assets/157493292/16a30683-6d77-4e0d-b777-498c2186a6de)
+![tabane](https://github.com/user-attachments/assets/8aab43be-3acb-4315-b29e-6998c526c956)
 
 ![BasedPkg](https://img.shields.io/badge/Javascript-121216?style=flat-square&labelColor=121216&logo=javascript&logoColor=c0c0c0&color=c0c0c0&label=Powered%20by) ![CommitActivity](https://img.shields.io/github/commit-activity/w/citrizon/tabane?style=flat-square&labelColor=121216&logo=github&logoColor=a0a0a0&color=c0c0c0) ![GitHub last commit](https://img.shields.io/github/last-commit/citrizon/tabane?style=flat-square&labelColor=121216&logo=github&logoColor=a0a0a0&color=c0c0c0)<br>
 
