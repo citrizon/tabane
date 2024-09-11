@@ -1,26 +1,26 @@
 /*
     Tabane, Javascript Project Manager
     Open-Source, BSD-2-Clause License
-    
+
     Tabane is a Modularized Javascript Project Manager
     with built-in superset to boost your Javascript
     Experience. You can; bundle up your project
     for Web use, Compile your codes written in Tabane
     Super-set or perform certain file operations.
-    
+
     Copyright (C) 2024 Botaro Shinomiya <citrizon@waifu.club>
     Copyright (C) 2024 OSCILLIX <oscillixonline@gmail.com>
     Copyright (C) 2024 Bluskript <bluskript@gmail.com>
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
-    
+
     *   Redistributions of source code must retain the above copyright
         notice, this list of conditions and the following disclaimer.
     *   Redistributions in binary form must reproduce the above copyright
         notice, this list of conditions and the following disclaimer in the
         documentation and/or other materials provided with the distribution.
-    
+
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
     AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
     IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,12 +30,13 @@
     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
     ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-    THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+    THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 const Toolkit = require( '../../shared/toolkit' );
 const Acorn = require( 'acorn' );
 const AcornWalk = require( 'acorn-walk' );
+const Resolver = require( 'resolve' );
 
 module.exports = Toolkit.module( ModuleGlobals => {
     const fss = ModuleGlobals.IO.FileSystem;
@@ -65,7 +66,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
         GetContext () {
             // Reference this context
             const that = this;
-            
+
             // Library
             const acorn = Acorn.Parser.extend(
                 ...Object.values( this.supersets ).map(
@@ -76,10 +77,10 @@ module.exports = Toolkit.module( ModuleGlobals => {
                     )
                 ).filter( e => e )
             );
-            
+
             // Original Functions
             const acornParse = acorn.parse, acornParseExp = acorn.parseExpressionAt;
-            
+
             // Pretransformed walkers
             const simpleWalkers = {};
             const fullWalkers = [];
@@ -99,14 +100,14 @@ module.exports = Toolkit.module( ModuleGlobals => {
                 }
             } );
             let pack = Object.fromEntries(
-                Object.entries( simpleWalkers ).map( e => [ 
+                Object.entries( simpleWalkers ).map( e => [
                     e[ 0 ],
-                    function ( ...args ) { 
+                    function ( ...args ) {
                         e[ 1 ].forEach( x => x.call( this, ...args ) )
                     }
                 ] )
             );
-            
+
             // Hooked Functions
             acorn.parse = function ( ...args ) {
                 const output = acornParse.call( acorn, ...args );
@@ -120,12 +121,12 @@ module.exports = Toolkit.module( ModuleGlobals => {
                 if ( fullWalkers.length > 0 ) fullWalkers.forEach( e => AcornWalk.fullAncestor( output, e ) );
                 return output;
             }
-            
+
             // Extras
             acorn.inspectRequires = function ( aAST, mapper ) {
                 // Hold a list of require elements.
                 const requires = [];
-                
+
                 // Create a walker
                 const walker = node => {
                     if (
@@ -142,7 +143,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
                         node.source.value = mapper( node.source.value, node );
                     };
                 }
-                
+
                 // After defining a walker, let's use it :3
                 AcornWalk.simple( aAST, {
                     CallExpression: walker,
@@ -150,7 +151,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
                     ExportAllDeclaration: walker,
                     ExportNamedDeclaration: walker
                 } );
-                
+
                 // After inspecting, return all the elements
                 return requires;
             }
@@ -160,16 +161,26 @@ module.exports = Toolkit.module( ModuleGlobals => {
                 '.json': { type: 'object' },
                 ...ModuleGlobals.ITransit.get.extensions()
             };
-            acorn.fetchPackage = source => {
-                
+            acorn.fetchPackage = ( source, includeNodeModules = false ) => {
                 // Make sure that the file exists
                 if ( !fss.existsSync( source ) ) {
                     for ( const [ ext, details ] of Object.entries( acorn.packageTypes ) )
                         if ( fss.existsSync( source + ext ) )
                             return { type: details.type, url: source + ext }
+                    if ( !includeNodeModules ) return { type: false };
+                    let actualPkg = false;
+                    try {
+                        actualPkg = Resolver.sync( source, {
+                            basedir: includeNodeModules
+                        } );
+                    } catch (e) {}
+                    if ( !actualPkg ) return { type: false };
+                    for ( const [ ext, details ] of Object.entries( acorn.packageTypes ) )
+                        if ( actualPkg.endsWith( ext ) && fss.existsSync( actualPkg ) )
+                            return { type: details.type, url: actualPkg, originalName: source }
                     return { type: false };
                 }
-                
+
                 // If it is a directory, do more checks
                 const lstat = fss.lstatSync( source );
                 if ( lstat.isFile() ) {
@@ -195,7 +206,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
                     }
                 }
             }
-            
+
             // Return the instance
             return acorn;
         }

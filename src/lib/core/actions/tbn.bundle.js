@@ -1,26 +1,26 @@
 /*
     Tabane, Javascript Project Manager
     Open-Source, BSD-2-Clause License
-    
+
     Tabane is a Modularized Javascript Project Manager
     with built-in superset to boost your Javascript
     Experience. You can; bundle up your project
     for Web use, Compile your codes written in Tabane
     Super-set or perform certain file operations.
-    
+
     Copyright (C) 2024 Botaro Shinomiya <citrizon@waifu.club>
     Copyright (C) 2024 OSCILLIX <oscillixonline@gmail.com>
     Copyright (C) 2024 Bluskript <bluskript@gmail.com>
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
-    
+
     *   Redistributions of source code must retain the above copyright
         notice, this list of conditions and the following disclaimer.
     *   Redistributions in binary form must reproduce the above copyright
         notice, this list of conditions and the following disclaimer in the
         documentation and/or other materials provided with the distribution.
-    
+
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
     AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
     IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,7 +30,7 @@
     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
     ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-    THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+    THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 const Toolkit = require( '../../shared/toolkit' );
@@ -324,6 +324,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
             outputFile: 'bundle.js',
             traceHide: null,
             compact: true,
+            includeNodeModules: true,
             relaxed: false,
             ecmaVersion: 'latest',
             sourceType: 'module',
@@ -335,18 +336,19 @@ module.exports = Toolkit.module( ModuleGlobals => {
             // up our bundles, right?
             if ( document.superset.indexOf( 'esconv' ) === -1 )
                 document.superset.push( 'esconv' );
-            
+
             // Make sure our target generator exists. Otherwise
             // stop the program from running
             const target = transits.get.subaction( document.target, 'tbn.bundle', 'target' );
             if ( !target ) throw new ModuleGlobals.Errors.TargetTransitDoesNotExistError( `Target with the name '${ clr.yellow( document.target ) }' does not exists.` );
-            
+
             // Log the operation we are about to perform.
             const featureList = Object.entries( {
                 "Superset": document.superset.length > 1,
                 "ESConv (Required)": document.superset.includes( 'esconv' ),
                 "Compact": document.compact,
-                "Hide Source": !!document.traceHide
+                "Hide Source": !!document.traceHide,
+                "Include Node Modules": document.includeNodeModules
             } ).map( ( [ key, val ] ) => val ? clr.magenta( key ) : undefined ).filter( e => !!e );
             con.log( `Started ${ clr.cyan( 'Bundle' ) } Operation.` ).onto( ifc => {
                 ifc.next.log( `Path: ${ clr.yellow( path ) }` );
@@ -354,29 +356,29 @@ module.exports = Toolkit.module( ModuleGlobals => {
                     featureList.length > 0 ? featureList.join( ', ' ) : clr.gray( 'None' )
                 }` );
             } ); con.newline();
-            
+
             // Define the paths
             const sourcePath   = document.sourceDir ? pth.join( path, document.sourceDir ) : path;
             const buildPath    = pth.join( path, document.outputDir );
             const mainFilePath = pth.join( sourcePath, document.main );
-            
+
             if ( !fss.existsSync( mainFilePath ) )
                 throw new ModuleGlobals.Errors.MainFileDoesNotExitError( 'Main file does not exist. Aborting.' );
-            
+
             // Use the superset manager
             const superset = new ITabaneLibs.SupersetManager( ITabaneLibs.TransitInterface );
             superset.EnableSuperset( ...document.superset );
-            
+
             // Get the code generator
             const acorn = superset.GetContext();
-            
+
             // Format the watermark
             if ( document.watermark !== '' )
                 document.watermark = `/*\n${ document.watermark.trim().split( '\n' ).map( e => '\t' + e ).join( '\n' ) }\n*/\n\n`;
-            
+
             // Create a base log instance
             const bcon = con.log( `${ clr.cyan( 'Bundling' ) } files.` );
-            
+
             // Define a base Acorn configuration
             const aconf = {
                 ecmaVersion: document.ecmaVersion ?? 'latest',
@@ -384,7 +386,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
                 allowHashBang: true,
                 allowAwaitOutsideFunction: false // pretty much a bundler-specific thing
             };
-            
+
             // If we are in relaxed mode, don't be strict
             if ( document.relaxed ) {
                 aconf.allowReserved = true;
@@ -392,20 +394,20 @@ module.exports = Toolkit.module( ModuleGlobals => {
                 aconf.allowImportExportEverywhere = true;
                 aconf.allowAwaitOutsideFunction = true;
             }
-            
+
             // Parse the entire requirement tree and
             // perform caching to prevent infinite
             // loops
             let bundleASTCollection = {},
                 bundleASTCounter    = 0;
-            function RecursiveRequireWalk ( rPath, type = 'script' ) {
+            function RecursiveRequireWalk ( rPath, type = 'script', originalName = undefined ) {
                 // If we have the path in the cache, return it lol
                 if ( path !== mainFilePath && bundleASTCollection[ path ] ) return;
-                
+
                 // Write a log that we are currently processing
                 // the given file.
-                bcon.next.log( `Processing ${ clr.yellow( rPath.replace( sourcePath, '.' ) ) }` );
-                
+                bcon.next.log( `Processing ${ clr.yellow( ( originalName ? ( originalName + ': ' ) : '' ) + rPath.replace( sourcePath, '.' ) ) }` );
+
                 // Gather the code's AST by given path
                 const AST = type === 'script' ? acorn.parse(
                     fss.readFileSync(
@@ -424,10 +426,10 @@ module.exports = Toolkit.module( ModuleGlobals => {
                         )
                     } ]
                 };
-                
+
                 // Walk through the require/import statements
                 if ( type === 'script' ) acorn.inspectRequires( AST, ( value, node ) => {
-                    const absLoc = acorn.fetchPackage( value.startsWith( '/' ) ? value : pth.join( rPath, '../' , value ) );
+                    const absLoc = acorn.fetchPackage( value.startsWith( '/' ) ? value : ( ( value.startsWith( './' ) || value.startsWith( '../' ) ) ? pth.join( rPath, '../' , value ) : value ), document.includeNodeModules ? pth.join( rPath, '../' ) : false );
                     if ( !absLoc?.type )
                         return value;
                     node.callee.name = '__tabane_require';
@@ -435,23 +437,23 @@ module.exports = Toolkit.module( ModuleGlobals => {
                         return bundleASTCollection[ absLoc.url ].pointer;
                     bundleASTCollection[ absLoc.url ] = {
                         pointer: "" + ( ++bundleASTCounter ),
-                        contents: RecursiveRequireWalk( absLoc.url, absLoc.type )
+                        contents: RecursiveRequireWalk( absLoc.url, absLoc.type, absLoc.originalName )
                     };
                     return bundleASTCollection[ absLoc.url ].pointer;
                 } );
-                
+
                 // After iteration, add your stuff to the Obf Array
                 if ( rPath == mainFilePath ) bundleASTCollection[ rPath ] = {
                     pointer: 'main',
                     contents: AST
                 }; else return AST;
             }
-            
+
             // After recursive function definition, run
             // it against the main file.
             RecursiveRequireWalk( mainFilePath );
             bcon.end.log( 'Bundle Reservation is done.' );
-            
+
             // Perform Transits and pack the syntax tree
             if ( document.transitsOrder.length > 0 ) con.newline();
             const fcon = document.transitsOrder.length > 0 ? con.log( `Started ${ clr.magenta( 'transit' ) } operations.` ) : {};
@@ -467,7 +469,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
                 bundleASTCollection[ mainFilePath ].pointer
             );
             if ( document.transitsOrder.length > 0 ) fcon.end.log( 'Performed all transit operations.' );
-            
+
             // Pack everything up now :3
             con.newline();
             con.log( `Packing up the ${ clr.magenta( 'Syntax Tree' ) }.` );
@@ -478,14 +480,14 @@ module.exports = Toolkit.module( ModuleGlobals => {
                     requireOutputs[ 1 ]
                 ]
             );
-            
+
             // Generate the output
             con.log( `Generating Javascript Code.` );
             let output = gen.generate( generated, {
                 format: { compact: document.compact },
                 env: document.environment
             } );
-            
+
             // Get compact or the beautiful version of the
             // generated code.
             let map = null;
@@ -505,11 +507,11 @@ module.exports = Toolkit.module( ModuleGlobals => {
                     console.error(error);
                 }
             }
-            
+
             // Create the build dir if it doesn't exists
             if ( !fss.existsSync( buildPath ) )
                 fss.mkdirSync( buildPath, { recursive: true } );
-            
+
             // Create a sourcemap suffix to hide traceback
             if ( document.traceHide )
                 con.log( 'Creating a fake SourceMap.' );
@@ -522,7 +524,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
                     mappings: ";;;;AAAA;AAAA;AAAA;AAAA;"
                 }
             ) ).toString( 'base64' ) : '';
-            
+
             // Write cute things
             con.log( `Writing Output to ${ clr.yellow( document.outputFile ) }.` );
             fss.writeFileSync( pth.join( buildPath, document.outputFile ), document.watermark + output + mapSuffix );

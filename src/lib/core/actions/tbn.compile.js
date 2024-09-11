@@ -49,6 +49,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
             sourceDir: '',
             outputDir: 'build',
             relaxed: false,
+            includeNodeModules: false,
             ecmaVersion: 'latest',
             sourceType: 'module',
             outscope: {
@@ -63,7 +64,8 @@ module.exports = Toolkit.module( ModuleGlobals => {
             const featureList = Object.entries( {
                 "Superset": !( document.superset.length === 1 && document.superset[ 0 ] === 'esconv' ) || document.superset.length > 1,
                 "ESConv": document.superset.includes( 'esconv' ),
-                "Outscope": document.outscope?.enabled ?? false
+                "Outscope": document.outscope?.enabled ?? false,
+                "Include Node Modules": document.includeNodeModules
             } ).map( ( [ key, val ] ) => val ? clr.magenta( key ) : undefined ).filter( e => !!e );
             con.log( `Started ${ clr.cyan( 'Compile' ) } Operation.` ).onto( ifc => {
                 ifc.next.log( `Path: ${ clr.yellow( path ) }` );
@@ -114,7 +116,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
             // perform caching to prevent infinite
             // loops
             const conversionCache = {};
-            function RecursiveRequireWalk ( rPath, absPath, type = 'script' ) {
+            function RecursiveRequireWalk ( rPath, absPath, type = 'script', originalName = undefined ) {
                 // If we have the path in the cache, return it lol
                 if ( rPath !== mainFilePath && conversionCache[ rPath ] ) return;
 
@@ -135,7 +137,8 @@ module.exports = Toolkit.module( ModuleGlobals => {
 
                 // Walk through the require/import statements
                 if ( type === 'script' ) acorn.inspectRequires( AST, value => {
-                    const absLoc = acorn.fetchPackage( value.startsWith( '/' ) ? value : pth.join( rPath, '../' , value ) );
+                    const absLoc = acorn.fetchPackage( value.startsWith( '/' ) ? value : ( value.startsWith( './' ) ? pth.join( rPath, '../' , value ) : value ), document.includeNodeModules ? pth.join( rPath, '../' ) : false );
+
                     if ( !absLoc.type || ( !absLoc.url.includes( sourcePath ) && !document.outscope?.enabled ) )
                         return value;
                     const copyPath =    !absLoc.url.includes( sourcePath )
@@ -143,7 +146,7 @@ module.exports = Toolkit.module( ModuleGlobals => {
                                             coLibPath,
                                             pth.basename( absLoc.url )
                                         ) : absLoc.url
-                    RecursiveRequireWalk( absLoc.url, copyPath, absLoc.type );
+                    RecursiveRequireWalk( absLoc.url, copyPath, absLoc.type, absLoc.originalName );
                     conversionCache[ absLoc.url ] = true;
                     const newPath = pth.relative( pth.dirname( rPath ), copyPath );
                     return !newPath.startsWith( '.' ) && !newPath.startsWith( '/' ) ? `./${ newPath }` : newPath;
